@@ -1,0 +1,335 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>common.OpTestQemu &#8212; op-test-framework pre-v1.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for common.OpTestQemu</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python2</span>
+<span class="c1">#</span>
+<span class="c1"># OpenPOWER Automated Test Project</span>
+<span class="c1">#</span>
+<span class="c1"># Contributors Listed Below - COPYRIGHT 2015,2017</span>
+<span class="c1"># [+] International Business Machines Corp.</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or</span>
+<span class="c1"># implied. See the License for the specific language governing</span>
+<span class="c1"># permissions and limitations under the License.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Support testing against Qemu simulator</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">atexit</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">pexpect</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+
+<span class="kn">from</span> <span class="nn">common.Exceptions</span> <span class="k">import</span> <span class="n">CommandFailed</span>
+<span class="kn">from</span> <span class="nn">common</span> <span class="k">import</span> <span class="n">OPexpect</span>
+
+<div class="viewcode-block" id="ConsoleState"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.ConsoleState">[docs]</a><span class="k">class</span> <span class="nc">ConsoleState</span><span class="p">():</span>
+    <span class="n">DISCONNECTED</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">CONNECTED</span> <span class="o">=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="QemuConsole"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuConsole">[docs]</a><span class="k">class</span> <span class="nc">QemuConsole</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A &#39;connection&#39; to the Qemu Console involves *launching* qemu.</span>
+<span class="sd">    Terminating a connection will *terminate* the qemu process.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qemu_binary</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skiboot</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initramfs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">hda</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cdrom</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qemu_binary</span> <span class="o">=</span> <span class="n">qemu_binary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skiboot</span> <span class="o">=</span> <span class="n">skiboot</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initramfs</span> <span class="o">=</span> <span class="n">initramfs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hda</span> <span class="o">=</span> <span class="n">hda</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">ConsoleState</span><span class="o">.</span><span class="n">DISCONNECTED</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logfile</span> <span class="o">=</span> <span class="n">logfile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cdrom</span> <span class="o">=</span> <span class="n">cdrom</span>
+
+<div class="viewcode-block" id="QemuConsole.terminate"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuConsole.terminate">[docs]</a>    <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">ConsoleState</span><span class="o">.</span><span class="n">CONNECTED</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;#Qemu TERMINATE&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sol</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">ConsoleState</span><span class="o">.</span><span class="n">DISCONNECTED</span></div>
+
+<div class="viewcode-block" id="QemuConsole.close"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuConsole.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">ConsoleState</span><span class="o">.</span><span class="n">DISCONNECTED</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="nb">print</span> <span class="s2">&quot;Qemu close -&gt; TERMINATE&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sol</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">ConsoleState</span><span class="o">.</span><span class="n">DISCONNECTED</span></div>
+
+<div class="viewcode-block" id="QemuConsole.connect"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuConsole.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">ConsoleState</span><span class="o">.</span><span class="n">CONNECTED</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sol</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">ConsoleState</span><span class="o">.</span><span class="n">DISCONNECTED</span>
+
+        <span class="nb">print</span> <span class="s2">&quot;#Qemu Console CONNECT&quot;</span>
+
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qemu_binary</span><span class="p">)</span>
+               <span class="o">+</span> <span class="s2">&quot; -M powernv -m 4G&quot;</span>
+               <span class="o">+</span> <span class="s2">&quot; -nographic&quot;</span>
+               <span class="o">+</span> <span class="s2">&quot; -bios </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">skiboot</span><span class="p">)</span>
+               <span class="o">+</span> <span class="s2">&quot; -kernel </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">)</span>
+           <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initramfs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span> <span class="o">+</span> <span class="s2">&quot; -initrd </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initramfs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hda</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span> <span class="o">+</span> <span class="s2">&quot; -hda </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hda</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdrom</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span> <span class="o">+</span> <span class="s2">&quot; -cdrom </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cdrom</span><span class="p">)</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span> <span class="o">+</span> <span class="s2">&quot; -netdev user,id=u1 -device e1000,netdev=u1&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span> <span class="o">+</span> <span class="s2">&quot; -device ipmi-bmc-sim,id=bmc0 -device isa-ipmi-bt,bmc=bmc0,irq=10&quot;</span>
+        <span class="nb">print</span> <span class="n">cmd</span>
+        <span class="n">solChild</span> <span class="o">=</span> <span class="n">OPexpect</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span><span class="n">logfile</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logfile</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">ConsoleState</span><span class="o">.</span><span class="n">CONNECTED</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sol</span> <span class="o">=</span> <span class="n">solChild</span>
+        <span class="k">return</span> <span class="n">solChild</span></div>
+
+<div class="viewcode-block" id="QemuConsole.get_console"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuConsole.get_console">[docs]</a>    <span class="k">def</span> <span class="nf">get_console</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">ConsoleState</span><span class="o">.</span><span class="n">DISCONNECTED</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sol</span><span class="o">.</span><span class="n">isalive</span><span class="p">()):</span>
+            <span class="nb">print</span> <span class="s1">&#39;# Reconnecting&#39;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">120</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="s2">&quot;IPMI: not able to get sol console&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sol</span></div>
+
+<div class="viewcode-block" id="QemuConsole.run_command"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuConsole.run_command">[docs]</a>    <span class="k">def</span> <span class="nf">run_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span>
+        <span class="n">console</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_console</span><span class="p">()</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">expect</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="c1"># from us</span>
+        <span class="n">rc</span> <span class="o">=</span> <span class="n">console</span><span class="o">.</span><span class="n">expect</span><span class="p">([</span><span class="s2">&quot;\[console-pexpect\]#$&quot;</span><span class="p">,</span><span class="n">pexpect</span><span class="o">.</span><span class="n">TIMEOUT</span><span class="p">],</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">console</span><span class="o">.</span><span class="n">before</span>
+
+        <span class="n">console</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="s2">&quot;echo $?&quot;</span><span class="p">)</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">expect</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="c1"># from us</span>
+        <span class="n">rc</span> <span class="o">=</span> <span class="n">console</span><span class="o">.</span><span class="n">expect</span><span class="p">([</span><span class="s2">&quot;\[console-pexpect\]#$&quot;</span><span class="p">,</span><span class="n">pexpect</span><span class="o">.</span><span class="n">TIMEOUT</span><span class="p">],</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="n">exitcode</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">console</span><span class="o">.</span><span class="n">before</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r\r\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">exitcode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">CommandFailed</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">exitcode</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">res</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">console</span><span class="o">.</span><span class="n">before</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span></div>
+
+    <span class="c1"># This command just runs and returns the ouput &amp; ignores the failure</span>
+<div class="viewcode-block" id="QemuConsole.run_command_ignore_fail"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuConsole.run_command_ignore_fail">[docs]</a>    <span class="k">def</span> <span class="nf">run_command_ignore_fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">CommandFailed</span> <span class="k">as</span> <span class="n">cf</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">cf</span><span class="o">.</span><span class="n">output</span>
+        <span class="k">return</span> <span class="n">output</span></div></div>
+
+<div class="viewcode-block" id="QemuIPMI"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuIPMI">[docs]</a><span class="k">class</span> <span class="nc">QemuIPMI</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Qemu has fairly limited IPMI capability, and we probably need to</span>
+<span class="sd">    extend the capability checks so that more of the IPMI test suite</span>
+<span class="sd">    gets skipped.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">console</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console</span> <span class="o">=</span> <span class="n">console</span>
+
+<div class="viewcode-block" id="QemuIPMI.ipmi_power_off"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuIPMI.ipmi_power_off">[docs]</a>    <span class="k">def</span> <span class="nf">ipmi_power_off</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For Qemu, this just kills the simulator&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="QemuIPMI.ipmi_wait_for_standby_state"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuIPMI.ipmi_wait_for_standby_state">[docs]</a>    <span class="k">def</span> <span class="nf">ipmi_wait_for_standby_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i_timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For Qemu, we just kill the simulator&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="QemuIPMI.ipmi_set_boot_to_petitboot"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuIPMI.ipmi_set_boot_to_petitboot">[docs]</a>    <span class="k">def</span> <span class="nf">ipmi_set_boot_to_petitboot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="QemuIPMI.ipmi_sel_check"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuIPMI.ipmi_sel_check">[docs]</a>    <span class="k">def</span> <span class="nf">ipmi_sel_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i_string</span><span class="o">=</span><span class="s2">&quot;Transition to Non-recoverable&quot;</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="QemuIPMI.sys_set_bootdev_no_override"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.QemuIPMI.sys_set_bootdev_no_override">[docs]</a>    <span class="k">def</span> <span class="nf">sys_set_bootdev_no_override</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div></div>
+
+<div class="viewcode-block" id="OpTestQemu"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.OpTestQemu">[docs]</a><span class="k">class</span> <span class="nc">OpTestQemu</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qemu_binary</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skiboot</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">kernel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initramfs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cdrom</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">logfile</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">hda</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">hda</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qemu_hda_file</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">delete</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="fm">__del__</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qemu_hda_file</span> <span class="o">=</span> <span class="n">hda</span>
+        <span class="n">create_hda</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s2">&quot;qemu-img&quot;</span><span class="p">,</span> <span class="s2">&quot;create&quot;</span><span class="p">,</span>
+                                            <span class="s2">&quot;-fqcow2&quot;</span><span class="p">,</span>
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">qemu_hda_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                            <span class="s2">&quot;10G&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console</span> <span class="o">=</span> <span class="n">QemuConsole</span><span class="p">(</span><span class="n">qemu_binary</span><span class="p">,</span> <span class="n">skiboot</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">initramfs</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="n">logfile</span><span class="p">,</span> <span class="n">hda</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">qemu_hda_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">cdrom</span><span class="o">=</span><span class="n">cdrom</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ipmi</span> <span class="o">=</span> <span class="n">QemuIPMI</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">console</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qemu_hda_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<div class="viewcode-block" id="OpTestQemu.get_host_console"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.OpTestQemu.get_host_console">[docs]</a>    <span class="k">def</span> <span class="nf">get_host_console</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">console</span></div>
+
+<div class="viewcode-block" id="OpTestQemu.get_ipmi"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.OpTestQemu.get_ipmi">[docs]</a>    <span class="k">def</span> <span class="nf">get_ipmi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ipmi</span></div>
+
+<div class="viewcode-block" id="OpTestQemu.power_off"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.OpTestQemu.power_off">[docs]</a>    <span class="k">def</span> <span class="nf">power_off</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="OpTestQemu.power_on"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.OpTestQemu.power_on">[docs]</a>    <span class="k">def</span> <span class="nf">power_on</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">console</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="OpTestQemu.get_rest_api"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.OpTestQemu.get_rest_api">[docs]</a>    <span class="k">def</span> <span class="nf">get_rest_api</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="OpTestQemu.has_os_boot_sensor"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.OpTestQemu.has_os_boot_sensor">[docs]</a>    <span class="k">def</span> <span class="nf">has_os_boot_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="OpTestQemu.has_occ_active_sensor"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.OpTestQemu.has_occ_active_sensor">[docs]</a>    <span class="k">def</span> <span class="nf">has_occ_active_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="OpTestQemu.has_host_status_sensor"><a class="viewcode-back" href="../../programming.html#common.OpTestQemu.OpTestQemu.has_host_status_sensor">[docs]</a>    <span class="k">def</span> <span class="nf">has_host_status_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">op-test-framework</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=open-power&repo=op-test-framework&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/open-power/op-test-framework">
+    <img
+        alt="https://secure.travis-ci.org/open-power/op-test-framework.svg?branch=master"
+        src="https://secure.travis-ci.org/open-power/op-test-framework.svg?branch=master"
+    />
+</a>
+</p>
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../user-guide.html">op-test User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Programming Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../programming.html">Programming Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../programming.html#generic-classes-modules">Generic Classes/Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../programming.html#bmc-machine-specific">BMC/Machine Specific</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../programming.html#module-testcases.OpTestFlash">Firmware Flashing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, OpenPOWER Foundation.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/open-power/op-test-framework" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

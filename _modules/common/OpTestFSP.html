@@ -1,0 +1,618 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>common.OpTestFSP &#8212; op-test-framework pre-v1.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for common.OpTestFSP</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python2</span>
+<span class="c1"># encoding=utf8</span>
+<span class="c1"># IBM_PROLOG_BEGIN_TAG</span>
+<span class="c1"># This is an automatically generated prolog.</span>
+<span class="c1">#</span>
+<span class="c1"># $Source: op-test-framework/common/OpTestFSP.py $</span>
+<span class="c1">#</span>
+<span class="c1"># OpenPOWER Automated Test Project</span>
+<span class="c1">#</span>
+<span class="c1"># Contributors Listed Below - COPYRIGHT 2017</span>
+<span class="c1"># [+] International Business Machines Corp.</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or</span>
+<span class="c1"># implied. See the License for the specific language governing</span>
+<span class="c1"># permissions and limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># IBM_PROLOG_END_TAG</span>
+
+<span class="c1">## @package OpTestFSP</span>
+<span class="c1">#  This class can contains common functions which are useful for </span>
+<span class="c1">#  FSP platforms</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pexpect</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">commands</span>
+
+<span class="kn">from</span> <span class="nn">OpTestTConnection</span> <span class="k">import</span> <span class="n">TConnection</span>
+<span class="kn">from</span> <span class="nn">OpTestASM</span> <span class="k">import</span> <span class="n">OpTestASM</span>
+<span class="kn">from</span> <span class="nn">OpTestConstants</span> <span class="k">import</span> <span class="n">OpTestConstants</span> <span class="k">as</span> <span class="n">BMC_CONST</span>
+<span class="kn">from</span> <span class="nn">OpTestError</span> <span class="k">import</span> <span class="n">OpTestError</span>
+
+<span class="n">Possible_Hyp_value</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;01&#39;</span><span class="p">:</span> <span class="s1">&#39;PowerVM&#39;</span><span class="p">,</span> <span class="s1">&#39;03&#39;</span><span class="p">:</span> <span class="s1">&#39;PowerKVM&#39;</span><span class="p">}</span>
+<span class="n">Possible_Sys_State</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;terminated&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;standby&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;prestandby&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;ipling&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;runtime&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">}</span>
+
+<span class="c1">#Contains most of the common methods to interface with FSP.</span>
+<div class="viewcode-block" id="OpTestFSP"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP">[docs]</a><span class="k">class</span> <span class="nc">OpTestFSP</span><span class="p">():</span>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Initialize this object</span>
+    <span class="c1">#</span>
+    <span class="c1"># @param i_fspIP @type string: IP Address of the FSP</span>
+    <span class="c1"># @param i_fspUser @type string: Userid to log into the FSP</span>
+    <span class="c1"># @param i_fspPasswd @type string: Password of the userid to log into the FSP</span>
+    <span class="c1">#</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i_fspIP</span><span class="p">,</span> <span class="n">i_fspUser</span><span class="p">,</span> <span class="n">i_fspPasswd</span><span class="p">,</span> <span class="n">ipmi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rest</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">host_name</span> <span class="o">=</span> <span class="n">i_fspIP</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_name</span> <span class="o">=</span> <span class="n">i_fspUser</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">i_fspPasswd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">=</span> <span class="s2">&quot;$&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv_ASM</span> <span class="o">=</span> <span class="n">OpTestASM</span><span class="p">(</span><span class="n">i_fspIP</span><span class="p">,</span> <span class="n">i_fspUser</span><span class="p">,</span> <span class="n">i_fspPasswd</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv_IPMI</span> <span class="o">=</span> <span class="n">ipmi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rest</span> <span class="o">=</span> <span class="n">rest</span>
+
+<div class="viewcode-block" id="OpTestFSP.bmc_host"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.bmc_host">[docs]</a>    <span class="k">def</span> <span class="nf">bmc_host</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_ASM</span><span class="o">.</span><span class="n">host_name</span></div>
+
+<div class="viewcode-block" id="OpTestFSP.get_ipmi"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.get_ipmi">[docs]</a>    <span class="k">def</span> <span class="nf">get_ipmi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_IPMI</span></div>
+
+<div class="viewcode-block" id="OpTestFSP.get_rest_api"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.get_rest_api">[docs]</a>    <span class="k">def</span> <span class="nf">get_rest_api</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rest</span></div>
+
+<div class="viewcode-block" id="OpTestFSP.get_host_console"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.get_host_console">[docs]</a>    <span class="k">def</span> <span class="nf">get_host_console</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_IPMI</span><span class="o">.</span><span class="n">get_host_console</span><span class="p">()</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Get FSP telnet console</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.fsp_get_console"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.fsp_get_console">[docs]</a>    <span class="k">def</span> <span class="nf">fsp_get_console</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="s2">&quot;Disabling the firewall before running any FSP commands&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv_ASM</span><span class="o">.</span><span class="n">disablefirewall</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span> <span class="o">=</span> <span class="n">TConnection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">host_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">login</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fsp_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;hostname&quot;</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s2">&quot;Established Connection with FSP: </span><span class="si">{0}</span><span class="s2"> &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fsp_name</span><span class="p">)</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Execute and return the output of an FSP command</span>
+    <span class="c1">#</span>
+    <span class="c1"># @param command @type string: Command to execute in FSP</span>
+    <span class="c1">#</span>
+    <span class="c1"># @returns res @type string: output of command</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.fsp_run_command"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.fsp_run_command">[docs]</a>    <span class="k">def</span> <span class="nf">fsp_run_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="OpTestFSP.reboot"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.reboot">[docs]</a>    <span class="k">def</span> <span class="nf">reboot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span> <span class="c1"># fsp rr tests are covered in fspresetReload test</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Get IPL progress codes</span>
+    <span class="c1"># @returns string: ipl progress code</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.get_progress_code"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.get_progress_code">[docs]</a>    <span class="k">def</span> <span class="nf">get_progress_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;ls /opt/p1/srci/curripl&quot;</span><span class="p">)</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Check for system runtime state</span>
+    <span class="c1"># @returns True if system is in runtime else False</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.is_sys_powered_on"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.is_sys_powered_on">[docs]</a>    <span class="k">def</span> <span class="nf">is_sys_powered_on</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;smgr mfgState&quot;</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;runtime&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+    <span class="c1">##</span>
+    <span class="c1"># @brief Check for system standby state</span>
+    <span class="c1"># @returns True if system is in standby state else False</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.is_sys_standby"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.is_sys_standby">[docs]</a>    <span class="k">def</span> <span class="nf">is_sys_standby</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;smgr mfgState&quot;</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;standby&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Get current system status</span>
+    <span class="c1"># @returns string: current system state</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.get_sys_status"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.get_sys_status">[docs]</a>    <span class="k">def</span> <span class="nf">get_sys_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;smgr mfgState&quot;</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">state</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Get OPAL log from in memory console</span>
+    <span class="c1"># @returns string: opal log or empty</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.get_opal_console_log"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.get_opal_console_log">[docs]</a>    <span class="k">def</span> <span class="nf">get_opal_console_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sys_powered_on</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;getmemproc 31000000 40000 -fb /tmp/con &amp;&amp; cat /tmp/con&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">output</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">output</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Clear all fsp errors</span>
+    <span class="c1"># @returns True if all commands executed.</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.clear_fsp_errors"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.clear_fsp_errors">[docs]</a>    <span class="k">def</span> <span class="nf">clear_fsp_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#clear errl logs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;errl -p&quot;</span><span class="p">)</span>
+        <span class="c1">#clear gard</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;gard --clr all&quot;</span><span class="p">)</span>
+
+        <span class="c1">#clear fipsdump</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;fipsdump -i&quot;</span><span class="p">)</span>
+
+        <span class="c1">#clear sysdump</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;sysdump -idall&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Power off the system and wait for standby state</span>
+    <span class="c1"># @returns True: If system reached to standby state</span>
+    <span class="c1">#          False:If system fails to reach standby.</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.power_off_sys"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.power_off_sys">[docs]</a>    <span class="k">def</span> <span class="nf">power_off_sys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;smgr mfgState&quot;</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;standby&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;runtime&#39;</span> <span class="ow">or</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;ipling&#39;</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;Powering off, current state: &quot;</span><span class="o">+</span><span class="n">state</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;panlexec -f 8&quot;</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;success&quot;</span><span class="p">):</span>
+                <span class="nb">print</span> <span class="s2">&quot;Waiting for system to reach standby...&quot;</span>
+                <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sys_standby</span><span class="p">():</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+                <span class="nb">print</span> <span class="s2">&quot;Powered OFF&quot;</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s2">&quot;Power OFF failed&quot;</span>
+                <span class="nb">print</span> <span class="n">output</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Power on the system &amp; wait for system to reach runtime</span>
+    <span class="c1"># @returns True: If system reaches to runtime state</span>
+    <span class="c1">#          False:If system fails to reach runtime</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.power_on_sys"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.power_on_sys">[docs]</a>    <span class="k">def</span> <span class="nf">power_on_sys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;smgr mfgState&quot;</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">time_me</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;standby&#39;</span><span class="p">:</span>
+            <span class="c1"># just make sure we are booting in OPAL mode</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;registry -Hr menu/HypMode&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;03&#39;</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s2">&quot;Not in OPAL mode, switching to OPAL Hypervisor mode&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;registry -Hw menu/HypMode 03&quot;</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="s2">&quot;Powering on the system: &quot;</span> <span class="o">+</span> <span class="n">state</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;plckIPLRequest 0x01&quot;</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;success&quot;</span><span class="p">):</span>
+                <span class="nb">print</span> <span class="s2">&quot;Waiting for system to reach runtime...&quot;</span>
+                <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sys_powered_on</span><span class="p">():</span>
+                    <span class="nb">print</span> <span class="s2">&quot;Current system state: </span><span class="si">{0}</span><span class="s2">, progress code: </span><span class="si">{1}</span><span class="s2"> &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_sys_status</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_code</span><span class="p">())</span>
+                    <span class="n">time_me</span> <span class="o">+=</span> <span class="mi">5</span>
+                    <span class="k">if</span> <span class="n">time_me</span> <span class="o">&gt;</span> <span class="mi">1200</span><span class="p">:</span>
+                        <span class="nb">print</span> <span class="s2">&quot;System not yet runtime even after 20minutes?&quot;</span>
+                        <span class="nb">print</span> <span class="s2">&quot;Lets consider this as failed case and return&quot;</span>
+                        <span class="k">return</span> <span class="kc">False</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+                <span class="nb">print</span> <span class="s2">&quot;PowerOn Successful&quot;</span>
+                <span class="nb">print</span> <span class="s2">&quot;System at runtime and current progress code: &quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">get_progress_code</span><span class="p">()</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s2">&quot;Poweron Failed&quot;</span>
+                <span class="nb">print</span> <span class="s2">&quot;Last know Progress code:&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">get_progress_code</span><span class="p">()</span>
+                <span class="nb">print</span> <span class="n">output</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;runtime&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;terminated&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;prestandby&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Issue fsp reset</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.fsp_reset"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.fsp_reset">[docs]</a>    <span class="k">def</span> <span class="nf">fsp_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="s2">&quot;Issuing fsp Reset....&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">issue_forget</span><span class="p">(</span><span class="s2">&quot;smgr toolReset&quot;</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s2">&quot;FSP reset Done, Hope POWER comes back :) &quot;</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Check for nfs mount exists in fsp.</span>
+    <span class="c1"># @returns True : if nfs mount exist</span>
+    <span class="c1">#          False: if doesn&#39;t exist</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.mount_exists"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.mount_exists">[docs]</a>    <span class="k">def</span> <span class="nf">mount_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="s2">&quot;Checking for NFS mount...&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;which putmemproc;echo $?&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;NFS mount available in FSP&quot;</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;NFS mount is not available in FSP&quot;</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+    <span class="c1">##</span>
+    <span class="c1"># @brief Wait for system standby state</span>
+    <span class="c1"># @returns 0 on success or throws exception</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.wait_for_standby"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.wait_for_standby">[docs]</a>    <span class="k">def</span> <span class="nf">wait_for_standby</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="mi">60</span><span class="o">*</span><span class="n">timeout</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sys_standby</span><span class="p">():</span>
+                <span class="nb">print</span> <span class="s2">&quot;Current system status: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sys_status</span><span class="p">()</span>
+                <span class="nb">print</span> <span class="s2">&quot;Current progress code: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_code</span><span class="p">()</span>
+                <span class="k">break</span>
+            <span class="nb">print</span> <span class="s2">&quot;Current system status: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sys_status</span><span class="p">()</span>
+            <span class="nb">print</span> <span class="s2">&quot;Current progress code: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_code</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">timeout</span><span class="p">:</span>
+                <span class="n">l_msg</span> <span class="o">=</span> <span class="s2">&quot;Standby timeout&quot;</span>
+                <span class="k">raise</span> <span class="n">OpTestError</span><span class="p">(</span><span class="n">l_msg</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">BMC_CONST</span><span class="o">.</span><span class="n">SHORT_WAIT_STANDBY_DELAY</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">BMC_CONST</span><span class="o">.</span><span class="n">FW_SUCCESS</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Wait for system to reach ipling state</span>
+    <span class="c1"># @returns 0 on success or throws exception</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.wait_for_ipling"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.wait_for_ipling">[docs]</a>    <span class="k">def</span> <span class="nf">wait_for_ipling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="mi">60</span><span class="o">*</span><span class="n">timeout</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sys_status</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;ipling&quot;</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s2">&quot;Current system status: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sys_status</span><span class="p">()</span>
+                <span class="nb">print</span> <span class="s2">&quot;Current progress code: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_code</span><span class="p">()</span>
+                <span class="k">break</span>
+            <span class="nb">print</span> <span class="s2">&quot;Current system status: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sys_status</span><span class="p">()</span>
+            <span class="nb">print</span> <span class="s2">&quot;Current progress code: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_code</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">timeout</span><span class="p">:</span>
+                <span class="n">l_msg</span> <span class="o">=</span> <span class="s2">&quot;IPL timeout&quot;</span>
+                <span class="k">raise</span> <span class="n">OpTestError</span><span class="p">(</span><span class="n">l_msg</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">BMC_CONST</span><span class="o">.</span><span class="n">FW_SUCCESS</span></div>
+
+<div class="viewcode-block" id="OpTestFSP.wait_for_dump_to_start"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.wait_for_dump_to_start">[docs]</a>    <span class="k">def</span> <span class="nf">wait_for_dump_to_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Dump maximum can start in one minute(So lets wait for 3 mins)</span>
+        <span class="k">while</span> <span class="n">count</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sys_status</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;dumping&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;Current system status: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sys_status</span><span class="p">()</span>
+            <span class="nb">print</span> <span class="s2">&quot;Current progress code: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_code</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="n">OpTestError</span><span class="p">(</span><span class="s2">&quot;System dump not started even after 3 minutes&quot;</span><span class="p">)</span></div>
+
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Wait for system to reach runtime</span>
+    <span class="c1"># @returns 0 on success or throws exception</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.wait_for_runtime"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.wait_for_runtime">[docs]</a>    <span class="k">def</span> <span class="nf">wait_for_runtime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="mi">60</span><span class="o">*</span><span class="n">timeout</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sys_powered_on</span><span class="p">():</span>
+                <span class="nb">print</span> <span class="s2">&quot;Current system status: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sys_status</span><span class="p">()</span>
+                <span class="nb">print</span> <span class="s2">&quot;Current progress code: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_code</span><span class="p">()</span>
+                <span class="k">break</span>
+            <span class="nb">print</span> <span class="s2">&quot;Current system status: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sys_status</span><span class="p">()</span>
+            <span class="nb">print</span> <span class="s2">&quot;Current progress code: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_code</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">timeout</span><span class="p">:</span>
+                <span class="n">l_msg</span> <span class="o">=</span> <span class="s2">&quot;IPL timeout&quot;</span>
+                <span class="k">raise</span> <span class="n">OpTestError</span><span class="p">(</span><span class="n">l_msg</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">BMC_CONST</span><span class="o">.</span><span class="n">FW_SUCCESS</span></div>
+
+<div class="viewcode-block" id="OpTestFSP.enable_system_dump"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.enable_system_dump">[docs]</a>    <span class="k">def</span> <span class="nf">enable_system_dump</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="s2">&quot;Enabling the system dump policy&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;sysdump -sp enableSys&quot;</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;sysdump -vp&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;System dumps             Enabled       Enabled&quot;</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;System dump policy enabled successfully&quot;</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">raise</span> <span class="n">OpTestError</span><span class="p">(</span><span class="s2">&quot;Failed to enable system dump policy&quot;</span><span class="p">)</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Trigger system dump from fsp</span>
+    <span class="c1"># @returns True on success or raises exception</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.trigger_system_dump"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.trigger_system_dump">[docs]</a>    <span class="k">def</span> <span class="nf">trigger_system_dump</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mount_exists</span><span class="p">():</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;putmemproc 300000f8 0xdeadbeef&quot;</span><span class="p">)</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="s1">&#39;Status of the putmemproc command </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">state</span>
+            <span class="k">if</span> <span class="s1">&#39;k0:n0:s0:p00&#39;</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s2">&quot;Successfully triggered the sysdump from FSP&quot;</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">OpTestError</span><span class="p">(</span><span class="s2">&quot;FSP failed to trigger system dump&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">OpTestError</span><span class="p">(</span><span class="s2">&quot;Check LCB nfs mount point and retry&quot;</span><span class="p">)</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Wait for system dump to finish</span>
+    <span class="c1"># @returns True on success or throws exception</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.wait_for_systemdump_to_finish"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.wait_for_systemdump_to_finish">[docs]</a>    <span class="k">def</span> <span class="nf">wait_for_systemdump_to_finish</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_dump_to_start</span><span class="p">()</span>
+        <span class="c1"># If dump starts then wait for finish it</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">count</span> <span class="o">&lt;</span> <span class="mi">30</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;sysdump -qall&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;extractable&#39;</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s2">&quot;Sysdump is available completely and extractable.&quot;</span>
+                <span class="k">break</span>
+            <span class="nb">print</span> <span class="s2">&quot;Dumping is still in progress&quot;</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">OpTestError</span><span class="p">(</span><span class="s2">&quot;Even after a wait of 30 mins system dump is not available!&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Initiate fipsdump</span>
+    <span class="c1"># @returns dumpname: name of new dump</span>
+    <span class="c1">#          size_fsp: size of the dump</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.trigger_fipsdump_in_fsp"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.trigger_fipsdump_in_fsp">[docs]</a>    <span class="k">def</span> <span class="nf">trigger_fipsdump_in_fsp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="s2">&quot;FSP: Running the command &#39;fipsdump -u&#39;&quot;</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;fipsdump -u&quot;</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+        <span class="n">dumpname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;fipsdump -l | sed &#39;s/\ .*//&#39;&quot;</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s2">&quot;fipsdump name : </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">dumpname</span>
+        <span class="n">size_fsp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;fipsdump -l | awk &#39;{print $2}&#39;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dumpname</span><span class="p">,</span> <span class="n">size_fsp</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief List all fipsdumps in fsp</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.list_all_fipsdumps_in_fsp"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.list_all_fipsdumps_in_fsp">[docs]</a>    <span class="k">def</span> <span class="nf">list_all_fipsdumps_in_fsp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="s2">&quot;FSP: List all fipsdumps&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot;fipsdump -l&quot;</span>
+        <span class="nb">print</span> <span class="s2">&quot;Running the command </span><span class="si">%s</span><span class="s2"> on FSP&quot;</span> <span class="o">%</span> <span class="n">cmd</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="n">res</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Clear all fipsdumps in fsp</span>
+    <span class="c1"># </span>
+<div class="viewcode-block" id="OpTestFSP.clear_all_fipsdumps_in_fsp"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.clear_all_fipsdumps_in_fsp">[docs]</a>    <span class="k">def</span> <span class="nf">clear_all_fipsdumps_in_fsp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot;fipsdump -i&quot;</span>
+        <span class="nb">print</span> <span class="s2">&quot;FSP: Clearing all the fipsdump&#39;s in fsp&quot;</span>
+        <span class="nb">print</span> <span class="s2">&quot;Running the command </span><span class="si">%s</span><span class="s2"> on FSP&quot;</span> <span class="o">%</span> <span class="n">cmd</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="n">res</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Generate a sample error log from fsp</span>
+    <span class="c1"># @returns True on success or raises exception</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.generate_error_log_from_fsp"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.generate_error_log_from_fsp">[docs]</a>    <span class="k">def</span> <span class="nf">generate_error_log_from_fsp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot;errl -C --comp=0x4400 --etype=021 --refcode=04390 --sev=0x20 --commit=0x2000;echo $?&quot;</span>
+        <span class="nb">print</span> <span class="s2">&quot;FSP: Generating error log using errl command&quot;</span>
+        <span class="nb">print</span> <span class="s2">&quot;FSP: Running the command </span><span class="si">%s</span><span class="s2"> on fsp&quot;</span> <span class="o">%</span> <span class="n">cmd</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">res</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;FSP: error log generated successfully&quot;</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">OpTestError</span><span class="p">(</span><span class="s2">&quot;FSP: Failure in error log generation from FSP&quot;</span><span class="p">)</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief List all error logs from fsp</span>
+    <span class="c1"># </span>
+<div class="viewcode-block" id="OpTestFSP.list_all_errorlogs_in_fsp"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.list_all_errorlogs_in_fsp">[docs]</a>    <span class="k">def</span> <span class="nf">list_all_errorlogs_in_fsp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="s2">&quot;FSP: List all error logs&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot;errl -l&quot;</span>
+        <span class="nb">print</span> <span class="s2">&quot;Running the command </span><span class="si">%s</span><span class="s2"> on FSP&quot;</span> <span class="o">%</span> <span class="n">cmd</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="n">res</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Clear all error logs from fsp</span>
+    <span class="c1"># @returns True on success or raises exception</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.clear_errorlogs_in_fsp"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.clear_errorlogs_in_fsp">[docs]</a>    <span class="k">def</span> <span class="nf">clear_errorlogs_in_fsp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot;errl -p&quot;</span>
+        <span class="nb">print</span> <span class="s2">&quot;Running the command </span><span class="si">%s</span><span class="s2"> on FSP&quot;</span> <span class="o">%</span> <span class="n">cmd</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="n">res</span>
+        <span class="k">if</span> <span class="s2">&quot;ERRL repository purged all entries successfully&quot;</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;FSP: Error logs are cleared successfully&quot;</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">OpTestError</span><span class="p">(</span><span class="s2">&quot;FSP: Error logs are not getting cleared in FSP&quot;</span><span class="p">)</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Get machine type model from fsp</span>
+    <span class="c1"># @returns string or raises exception</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.get_raw_mtm"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.get_raw_mtm">[docs]</a>    <span class="k">def</span> <span class="nf">get_raw_mtm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fsp_MTM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;registry -r svpd/Raw_MachineTypeModel&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fsp_MTM</span></div>
+
+    <span class="c1">##</span>
+    <span class="c1"># @brief Power on system from fsp</span>
+    <span class="c1"># @returns None or raises exception</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="OpTestFSP.fsp_issue_power_on"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.fsp_issue_power_on">[docs]</a>    <span class="k">def</span> <span class="nf">fsp_issue_power_on</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="s2">&quot;PowerOn Machine&quot;</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspc</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;plckIPLRequest 0x01&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;SUCCESS&quot;</span> <span class="ow">in</span> <span class="n">output</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">OpTestError</span><span class="p">(</span><span class="s2">&quot;Failed to power on the machine from FSP&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OpTestFSP.has_inband_bootdev"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.has_inband_bootdev">[docs]</a>    <span class="k">def</span> <span class="nf">has_inband_bootdev</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="OpTestFSP.has_os_boot_sensor"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.has_os_boot_sensor">[docs]</a>    <span class="k">def</span> <span class="nf">has_os_boot_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="OpTestFSP.has_host_status_sensor"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.has_host_status_sensor">[docs]</a>    <span class="k">def</span> <span class="nf">has_host_status_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="OpTestFSP.has_occ_active_sensor"><a class="viewcode-back" href="../../programming.html#common.OpTestFSP.OpTestFSP.has_occ_active_sensor">[docs]</a>    <span class="k">def</span> <span class="nf">has_occ_active_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">op-test-framework</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=open-power&repo=op-test-framework&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/open-power/op-test-framework">
+    <img
+        alt="https://secure.travis-ci.org/open-power/op-test-framework.svg?branch=master"
+        src="https://secure.travis-ci.org/open-power/op-test-framework.svg?branch=master"
+    />
+</a>
+</p>
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../user-guide.html">op-test User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Programming Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../programming.html">Programming Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../programming.html#generic-classes-modules">Generic Classes/Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../programming.html#bmc-machine-specific">BMC/Machine Specific</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../programming.html#module-testcases.OpTestFlash">Firmware Flashing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, OpenPOWER Foundation.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/open-power/op-test-framework" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

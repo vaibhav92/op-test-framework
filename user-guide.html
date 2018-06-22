@@ -1,0 +1,687 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>op-test User Guide &#8212; op-test-framework pre-v1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Programming Guide" href="programming.html" />
+    <link rel="prev" title="Welcome to op-test-framework’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="op-test-user-guide">
+<span id="user-guide"></span><h1>op-test User Guide<a class="headerlink" href="#op-test-user-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="command-line-options">
+<span id="commandline"></span><h2>Command Line Options<a class="headerlink" href="#command-line-options" title="Permalink to this headline">¶</a></h2>
+<p>All configuration options can be specified via the command line or in a
+configuration file (see <a class="reference internal" href="#config-file"><span class="std std-ref">Configuration Files and Command Line Options</span></a>).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">op</span><span class="o">-</span><span class="n">test</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">c</span> <span class="n">FILE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="nb">list</span><span class="o">-</span><span class="n">suites</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">run</span><span class="o">-</span><span class="n">suite</span> <span class="n">RUN_SUITE</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">run</span> <span class="n">RUN</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">quiet</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">machine</span><span class="o">-</span><span class="n">state</span> <span class="p">{</span><span class="n">UNKNOWN</span><span class="p">,</span><span class="n">UNKNOWN_BAD</span><span class="p">,</span><span class="n">OFF</span><span class="p">,</span><span class="n">PETITBOOT</span><span class="p">,</span><span class="n">PETITBOOT_SHELL</span><span class="p">,</span><span class="n">OS</span><span class="p">}]</span>
+               <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="n">OUTPUT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">suffix</span> <span class="n">SUFFIX</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">bmc</span><span class="o">-</span><span class="nb">type</span> <span class="p">{</span><span class="n">AMI</span><span class="p">,</span><span class="n">SMC</span><span class="p">,</span><span class="n">FSP</span><span class="p">,</span><span class="n">OpenBMC</span><span class="p">,</span><span class="n">qemu</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">bmc</span><span class="o">-</span><span class="n">ip</span> <span class="n">BMC_IP</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">bmc</span><span class="o">-</span><span class="n">username</span> <span class="n">BMC_USERNAME</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">bmc</span><span class="o">-</span><span class="n">password</span> <span class="n">BMC_PASSWORD</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">bmc</span><span class="o">-</span><span class="n">usernameipmi</span> <span class="n">BMC_USERNAMEIPMI</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">bmc</span><span class="o">-</span><span class="n">passwordipmi</span> <span class="n">BMC_PASSWORDIPMI</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">bmc</span><span class="o">-</span><span class="n">prompt</span> <span class="n">BMC_PROMPT</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">smc</span><span class="o">-</span><span class="n">presshipmicmd</span> <span class="n">SMC_PRESSHIPMICMD</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">qemu</span><span class="o">-</span><span class="n">binary</span> <span class="n">QEMU_BINARY</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">ip</span> <span class="n">HOST_IP</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">user</span> <span class="n">HOST_USER</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">password</span> <span class="n">HOST_PASSWORD</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">lspci</span> <span class="n">HOST_LSPCI</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">scratch</span><span class="o">-</span><span class="n">disk</span> <span class="n">HOST_SCRATCH_DISK</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">prompt</span> <span class="n">HOST_PROMPT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">gateway</span> <span class="n">HOST_GATEWAY</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">submask</span> <span class="n">HOST_SUBMASK</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">mac</span> <span class="n">HOST_MAC</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">dns</span> <span class="n">HOST_DNS</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">proxy</span> <span class="n">PROXY</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">cmd</span> <span class="n">HOST_CMD</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">cmd</span><span class="o">-</span><span class="n">file</span> <span class="n">HOST_CMD_FILE</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">cmd</span><span class="o">-</span><span class="n">timeout</span> <span class="n">HOST_CMD_TIMEOUT</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">platform</span> <span class="p">{</span><span class="n">unknown</span><span class="p">,</span><span class="n">habanero</span><span class="p">,</span><span class="n">firestone</span><span class="p">,</span><span class="n">garrison</span><span class="p">,</span><span class="n">firenze</span><span class="p">,</span><span class="n">p9dsu</span><span class="p">}]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">os</span><span class="o">-</span><span class="n">cdrom</span> <span class="n">OS_CDROM</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">os</span><span class="o">-</span><span class="n">repo</span> <span class="n">OS_REPO</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">bmc</span><span class="o">-</span><span class="n">image</span> <span class="n">BMC_IMAGE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">pnor</span> <span class="n">HOST_PNOR</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">hpm</span> <span class="n">HOST_HPM</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">host</span><span class="o">-</span><span class="n">img</span><span class="o">-</span><span class="n">url</span> <span class="n">HOST_IMG_URL</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">flash</span><span class="o">-</span><span class="n">skiboot</span> <span class="n">FLASH_SKIBOOT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">flash</span><span class="o">-</span><span class="n">kernel</span> <span class="n">FLASH_KERNEL</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">flash</span><span class="o">-</span><span class="n">initramfs</span> <span class="n">FLASH_INITRAMFS</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">flash</span><span class="o">-</span><span class="n">part</span> <span class="n">PART</span> <span class="n">name</span> <span class="nb">bin</span> <span class="n">file</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">noflash</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">only</span><span class="o">-</span><span class="n">flash</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">pflash</span> <span class="n">PFLASH</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">pupdate</span> <span class="n">PUPDATE</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">un</span><span class="o">-</span><span class="n">signed</span><span class="o">-</span><span class="n">pnor</span> <span class="n">UN_SIGNED_PNOR</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">signed</span><span class="o">-</span><span class="n">pnor</span> <span class="n">SIGNED_PNOR</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">signed</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">pnor</span> <span class="n">SIGNED_TO_PNOR</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">key</span><span class="o">-</span><span class="n">transition</span><span class="o">-</span><span class="n">pnor</span> <span class="n">KEY_TRANSITION_PNOR</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">test</span><span class="o">-</span><span class="n">container</span> <span class="n">PART</span> <span class="n">name</span> <span class="nb">bin</span> <span class="n">file</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">secure</span><span class="o">-</span><span class="n">mode</span><span class="p">]</span>
+               <span class="p">[</span><span class="o">--</span><span class="n">trusted</span><span class="o">-</span><span class="n">mode</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="section" id="Named Arguments">
+<h3>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h3>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>-c, --config-file</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>Configuration File</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--machine-state</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Possible choices: UNKNOWN, UNKNOWN_BAD, OFF, PETITBOOT, PETITBOOT_SHELL, OS</p>
+<p class="last">Current machine state</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>-o, --output</kbd></td>
+<td>Output directory for test reports.  Can also be set via OP_TEST_OUTPUT env variable.</td></tr>
+<tr><td class="option-group">
+<kbd>--suffix</kbd></td>
+<td>Suffix to add to all reports.  Default is current time.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Test">
+<h3>Test<a class="headerlink" href="#Test" title="Permalink to this headline">¶</a></h3>
+<p>Tests to run</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd>--list-suites</kbd></td>
+<td><p class="first">List available suites to run</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--run-suite</kbd></td>
+<td>Run a test suite(s)</td></tr>
+<tr><td class="option-group">
+<kbd>--run</kbd></td>
+<td>Run individual tests</td></tr>
+<tr><td class="option-group">
+<kbd>--quiet</kbd></td>
+<td><p class="first">Don’t splat lots of things to the console</p>
+<p class="last">Default: False</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="BMC">
+<h3>BMC<a class="headerlink" href="#BMC" title="Permalink to this headline">¶</a></h3>
+<p>Options for Service Processor</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd>--bmc-type</kbd></td>
+<td><p class="first">Possible choices: AMI, SMC, FSP, OpenBMC, qemu</p>
+<p class="last">Type of service processor</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--bmc-ip</kbd></td>
+<td>BMC address</td></tr>
+<tr><td class="option-group">
+<kbd>--bmc-username</kbd></td>
+<td>SSH username for BMC</td></tr>
+<tr><td class="option-group">
+<kbd>--bmc-password</kbd></td>
+<td>SSH password for BMC</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--bmc-usernameipmi</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>IPMI username for BMC</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--bmc-passwordipmi</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>IPMI password for BMC</td></tr>
+<tr><td class="option-group">
+<kbd>--bmc-prompt</kbd></td>
+<td><p class="first">Prompt for BMC ssh session</p>
+<p class="last">Default: “#”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--smc-presshipmicmd</kbd></td>
+</tr>
+<tr><td>&#160;</td><td></td></tr>
+<tr><td class="option-group">
+<kbd>--qemu-binary</kbd></td>
+<td><p class="first">[QEMU Only] qemu simulator binary</p>
+<p class="last">Default: “qemu-system-ppc64”</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Host">
+<h3>Host<a class="headerlink" href="#Host" title="Permalink to this headline">¶</a></h3>
+<p>Installed OS information</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd>--host-ip</kbd></td>
+<td>Host address</td></tr>
+<tr><td class="option-group">
+<kbd>--host-user</kbd></td>
+<td>SSH username for Host</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--host-password</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>SSH password for Host</td></tr>
+<tr><td class="option-group">
+<kbd>--host-lspci</kbd></td>
+<td>Known ‘lspci -n -m’ for host</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--host-scratch-disk</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">A block device we can erase</p>
+<p class="last">Default: “”</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--host-prompt</kbd></td>
+<td><p class="first">Prompt for Host SSH session</p>
+<p class="last">Default: “#”</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--platform</kbd></td>
+<td><p class="first">Possible choices: unknown, habanero, firestone, garrison, firenze, p9dsu</p>
+<p class="last">Platform (used for EnergyScale tests)</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Host OS Install">
+<h3>Host OS Install<a class="headerlink" href="#Host OS Install" title="Permalink to this headline">¶</a></h3>
+<p>Options for installing an OS on the Host</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd>--host-gateway</kbd></td>
+<td><p class="first">Host Gateway</p>
+<p class="last">Default: “”</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--host-submask</kbd></td>
+<td><p class="first">Host Subnet Mask</p>
+<p class="last">Default: “255.255.255.0”</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--host-mac</kbd></td>
+<td><p class="first">Host Mac address (used by OS installer to set up OS on the host)</p>
+<p class="last">Default: “”</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--host-dns</kbd></td>
+<td><p class="first">Host DNS Servers (used by OS installer to set up OS on the host)</p>
+<p class="last">Default: “”</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--proxy</kbd></td>
+<td><p class="first">proxy for the Host to access the internet. Only needed for tests that install an OS</p>
+<p class="last">Default: “”</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Host Run Commands">
+<h3>Host Run Commands<a class="headerlink" href="#Host Run Commands" title="Permalink to this headline">¶</a></h3>
+<p>Options for Running custom commands on the Host</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd>--host-cmd</kbd></td>
+<td><p class="first">Command to run</p>
+<p class="last">Default: “”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--host-cmd-file</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Commands to run from file</p>
+<p class="last">Default: “”</p>
+</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--host-cmd-timeout</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Timeout for command</p>
+<p class="last">Default: 1000</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="OS Images">
+<h3>OS Images<a class="headerlink" href="#OS Images" title="Permalink to this headline">¶</a></h3>
+<p>OS Images to boot/install</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd>--os-cdrom</kbd></td>
+<td><p class="first">OS CD/DVD install image</p>
+<p class="last">Default: “”</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--os-repo</kbd></td>
+<td><p class="first">OS repo</p>
+<p class="last">Default: “”</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="Images">
+<h3>Images<a class="headerlink" href="#Images" title="Permalink to this headline">¶</a></h3>
+<p>Firmware LIDs/images to flash</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd>--bmc-image</kbd></td>
+<td>BMC image to flash(<a href="#id1"><span class="problematic" id="id2">*</span></a>.tar in OpenBMC, <a href="#id3"><span class="problematic" id="id4">*</span></a>.bin in SMC)</td></tr>
+<tr><td class="option-group">
+<kbd>--host-pnor</kbd></td>
+<td>PNOR image to flash</td></tr>
+<tr><td class="option-group">
+<kbd>--host-hpm</kbd></td>
+<td>HPM image to flash</td></tr>
+<tr><td class="option-group">
+<kbd>--host-img-url</kbd></td>
+<td>URL to Host Firmware image to flash on FSP systems (Must be URL accessible petitboot shell on the host)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--flash-skiboot</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>skiboot to use/flash. Depending on platform, may need to be xz compressed</td></tr>
+<tr><td class="option-group">
+<kbd>--flash-kernel</kbd></td>
+<td>petitboot zImage.epapr to use/flash.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--flash-initramfs</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>petitboot rootfs to use/flash. Not all platforms support this option</td></tr>
+<tr><td class="option-group">
+<kbd>--flash-part</kbd></td>
+<td>PNOR partition to flash, Ex: –flash-part OCC occ.bin</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--noflash, --no-flash</kbd></td>
+</tr>
+<tr><td>&#160;</td><td><p class="first">Even if images are specified, don’t flash them</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--only-flash</kbd></td>
+<td><p class="first">Only flash, don’t run any tests (even if specified)</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--pflash</kbd></td>
+<td>pflash to copy to BMC (if needed)</td></tr>
+<tr><td class="option-group">
+<kbd>--pupdate</kbd></td>
+<td>pupdate to flash PNOR for Supermicro systems</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="STB">
+<h3>STB<a class="headerlink" href="#STB" title="Permalink to this headline">¶</a></h3>
+<p>Secure and Trusted boot parameters</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd>--un-signed-pnor</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>Unsigned or improperly signed PNOR</td></tr>
+<tr><td class="option-group">
+<kbd>--signed-pnor</kbd></td>
+<td>Properly signed PNOR image(imprint)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--signed-to-pnor</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>Properly signed PNOR image(imprint or production)</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--key-transition-pnor</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>Key transition PNOR image</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd>--test-container</kbd></td>
+</tr>
+<tr><td>&#160;</td><td>PNOR partition container to flash, Ex: –test-container CAPP capp_unsigned.bin</td></tr>
+<tr><td class="option-group">
+<kbd>--secure-mode</kbd></td>
+<td><p class="first">Secureboot mode</p>
+<p class="last">Default: False</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd>--trusted-mode</kbd></td>
+<td><p class="first">Trustedboot mode</p>
+<p class="last">Default: False</p>
+</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="configuration-files-and-command-line-options">
+<span id="config-file"></span><h2>Configuration Files and Command Line Options<a class="headerlink" href="#configuration-files-and-command-line-options" title="Permalink to this headline">¶</a></h2>
+<p>When working with <cite>op-test</cite>, you can specify every configuration option on
+the command line, or you can save some in a configuration file. Typically,
+you may keep a configuration file per-machine you test against, to save on
+typing out all the IP addresses and login credentials.</p>
+<p>For example, this <code class="docutils literal notranslate"><span class="pre">witherspoon.conf</span></code> file will connect to a Witherspoon
+machine:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[op-test]</span>
+<span class="na">bmc_type</span><span class="o">=</span><span class="s">OpenBMC</span>
+<span class="na">bmc_ip</span><span class="o">=</span><span class="s">10.0.0.1</span>
+<span class="na">bmc_username</span><span class="o">=</span><span class="s">root</span>
+<span class="na">bmc_password</span><span class="o">=</span><span class="s">0penBmc</span>
+<span class="na">host_ip</span><span class="o">=</span><span class="s">10.0.0.2</span>
+<span class="na">host_user</span><span class="o">=</span><span class="s">root</span>
+<span class="na">host_password</span><span class="o">=</span><span class="s">abc123</span>
+</pre></div>
+</div>
+<p>It can be used as such:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./op-test --config-file witherspoon.conf
+</pre></div>
+</div>
+<p>Other options can also be specified on the commandline, such as <code class="docutils literal notranslate"><span class="pre">--host-pnor</span></code>
+which is documented in <a class="reference internal" href="#flashing-firmware"><span class="std std-ref">Flashing Firmware with op-test</span></a>.</p>
+<p>There is also a <em>per user</em> configuration file, at <code class="docutils literal notranslate"><span class="pre">~/.op-test-framework.conf</span></code>
+where you can store global options, for example:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[op-test]</span>
+<span class="na">smc_presshipmicmd</span><span class="o">=</span><span class="s">foo</span>
+<span class="na">pupdate</span><span class="o">=</span><span class="s">~/pupdate</span>
+<span class="na">pflash</span><span class="o">=</span><span class="s">~/pflash</span>
+<span class="na">ubuntu-cdrom</span><span class="o">=</span><span class="s">~/ubuntu-18.04-ppc64el.iso</span>
+</pre></div>
+</div>
+<p>This per user configuration file will be loaded in <em>addition</em> to the config
+file provided on the command line.</p>
+</div>
+<div class="section" id="flashing-firmware-with-op-test">
+<span id="flashing-firmware"></span><h2>Flashing Firmware with op-test<a class="headerlink" href="#flashing-firmware-with-op-test" title="Permalink to this headline">¶</a></h2>
+<p>In the future, there may be some standard interface for flashing firmware
+onto OpenPOWER machines. We are not yet in that future, so the method of
+flashing firmware varies somewhat between platforms.</p>
+<p>There is code in <cite>op-test</cite> to hide these differences from you, and just
+provide easy ways to say “flash this firmware and run the test suite”. This
+functionality is <em>primarily</em> focused towards firmware developers.</p>
+<p>By default, <cite>op-test</cite> will flash any firmware provided <em>before</em> running
+any tests. You can change this behaviour with the <code class="docutils literal notranslate"><span class="pre">--no-flash</span></code> or
+<cite>-only-flash`</cite> command line options (which should be fairly self-explanatory).</p>
+<p>To flash a full PNOR image, you will need one in the correct format:</p>
+<dl class="docutils">
+<dt>AMI BMC based systems (e.g. Palmetto, Habanero, Firestone and Garrison)</dt>
+<dd>A raw PNOR file (<cite>palmetto.pnor</cite>, <cite>habanero.pnor</cite> etc) as produced by
+<cite>op-build</cite> should be provided to the <code class="docutils literal notranslate"><span class="pre">--host-pnor</span></code> command line option.
+<cite>op-test</cite> will use this with <cite>pflash</cite> on the BMC to write the whole PNOR
+image to flash. It will <strong>NOT</strong> preserve <em>anything</em> from what was previously
+flashed (e.g. NVRAM, GUARD records).
+Since most AMI BMCs do not ship with <cite>pflash</cite> you will need to tell <cite>op-test</cite>
+where to find a pflash binary compiled for the BMC with the <code class="docutils literal notranslate"><span class="pre">--pflash</span></code>
+option</dd>
+<dt>IBM FSP based systems (e.g. Tuleta, ZZ)</dt>
+<dd>The only current method that <cite>op-test</cite> supports for flashing a full FSP
+image is in-band, fetching the image over the network.
+You need to specify the URL to the full firmware image to the
+<code class="docutils literal notranslate"><span class="pre">--host-image-url</span></code> command line option.</dd>
+<dt>OpenBMC based systems (e.g. Witherspoon, Romulus)</dt>
+<dd>There are two ways for OpenBMC systems to store PNOR, either using the
+full NOR chip for the PNOR, or using the vPNOR (Virtual PNOR) method.
+The normal PNOR method needs a <code class="docutils literal notranslate"><span class="pre">.pnor</span></code> file, e.g. <code class="docutils literal notranslate"><span class="pre">romulus.pnor</span></code>.
+The vPNOR method needs a <code class="docutils literal notranslate"><span class="pre">.squashfs.tar</span></code> file,
+e.g. <code class="docutils literal notranslate"><span class="pre">witherspoon.pnor.squashfs.tar</span></code>.
+If you provide the incorrect format, <cite>op-test</cite> will error out.</dd>
+</dl>
+<p>For <em>BMC</em> firmware, you also need the machine specific BMC firmware image
+format to supply to the <code class="docutils literal notranslate"><span class="pre">--bmc-image</span></code> command line option. For some BMCs,
+you may need an external utility. For example, Supermicro (SMC) BMCs need
+the <code class="docutils literal notranslate"><span class="pre">pUpdate</span></code> utility, which you can point <cite>op-test</cite> at with the <code class="docutils literal notranslate"><span class="pre">--pupdate</span></code>
+command line option.</p>
+<div class="section" id="openbmc-witherspoon-examples">
+<h3>OpenBMC/Witherspoon Examples<a class="headerlink" href="#openbmc-witherspoon-examples" title="Permalink to this headline">¶</a></h3>
+<p>These examples are for the Witherspoon system, which uses OpenBMC as a BMC
+and the vPNOR implementation. For Romulus (which does not use vPNOR), instead
+of <cite>witherspoon.pnor.squashfs.tar</cite> you may need to use <cite>witherspoon.pnor</cite>.</p>
+<p><strong>FIXME</strong> Confirm details on Romulus.</p>
+<p>For example, this command will use the <code class="docutils literal notranslate"><span class="pre">witherspoon.conf</span></code> configuration file
+(see <a class="reference internal" href="#config-file"><span class="std std-ref">Configuration Files and Command Line Options</span></a>) for login credentials to a Witherspoon machine, and
+will flash <em>host</em> firmware before running the default test suite:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./op-test --config-file witherspoon.conf <span class="se">\</span>
+--host-pnor ~/op-build/output/images/witherspoon.pnor.squashfs.tar
+</pre></div>
+</div>
+<p>In this example we’ve provided the <em>full</em> path to a witherspoon firmware image
+that we’ve built using <cite>op-build</cite>.</p>
+<p>If you <em>also</em> want to flash BMC firmware, you can do that with the addition of the <code class="docutils literal notranslate"><span class="pre">--bmc-image</span></code> command line option:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./op-test --config-file witherspoon.conf <span class="se">\</span>
+--bmc-image obmc-phosphor-image-witherspoon.ubi.mtd.tar <span class="se">\</span>
+--host-pnor ~/op-build/output/images/witherspoon.pnor.squashfs.tar
+</pre></div>
+</div>
+<p>In this example, <cite>op-test</cite> will first update the BMC firmware, then update the host firmware and <em>then</em> run the test suite.</p>
+<p>If you’re a skiboot/OPAL developer and wanting to test your latest code when
+applied on top of a known-good BMC and PNOR image, you can use the
+<code class="docutils literal notranslate"><span class="pre">--flash-skiboot</span></code> command line option to instruct <cite>op-test</cite> to, as a final
+step, overwrite the <cite>PAYLOAD</cite> partition with your skiboot:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./op-test --config-file witherspoon.conf <span class="se">\</span>
+--bmc-image obmc-phosphor-image-witherspoon.ubi.mtd.tar <span class="se">\</span>
+--host-pnor ~/op-build/output/images/witherspoon.pnor.squashfs.tar <span class="se">\</span>
+--flash-skiboot ~/skiboot/skiboot.lid.xz.stb
+</pre></div>
+</div>
+<p>In this case, if “field mode” is enabled on the BMC, <cite>op-test</cite> will disable
+it for you to allow for overriding host firmware with the skiboot image you
+aksed it to use.</p>
+<p>Since the Witherspoon platform has Secure Boot enabled, you will need the
+<cite>.stb</cite> variant of skiboot (i.e. with the Secure and Trusted Boot header),
+and since we’re an OpenPOWER system, we need the <cite>.xz</cite> compressed version,
+and this is why we provide <cite>skiboot.lid.xz.stb</cite> to <cite>op-test</cite> for this system.</p>
+<p><strong>Note</strong> that with Secure Boot enabled, by default we only sign with <em>imprint</em>
+keys.</p>
+</div>
+<div class="section" id="ami-bmc-power8-openpower-sytems-examples">
+<h3>AMI BMC/POWER8 OpenPOWER sytems examples<a class="headerlink" href="#ami-bmc-power8-openpower-sytems-examples" title="Permalink to this headline">¶</a></h3>
+<p>For machines such as Palmetto, Habanero, Firestone and Garrison.</p>
+<p><strong>TODO</strong> Document BMC flashing.</p>
+<p>These systems have an AMI BMC and <cite>op-test</cite> will use <cite>pflash</cite> on the BMC
+to write host firmware. You will need to point <cite>op-test</cite> towards a <cite>pflash</cite>
+binary compiled for the BMC for <cite>op-test</cite> to copy over and use to flash
+firmware.</p>
+<p><strong>TODO</strong> Document HPM flashing.</p>
+<p>An example of flashing a full <cite>habanero.pnor</cite> image and running the default
+test suite is:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./op-test --config-file hab4.conf <span class="se">\</span>
+--host-pnor ~/op-build/output/images/habanero.pnor
+</pre></div>
+</div>
+<p>Just like on other systems, if you’re an OPAL/skiboot developer and you want
+to test your changes along with a known-good full PNOR image, you’d do that
+the same way, using the <code class="docutils literal notranslate"><span class="pre">--flash-skiboot</span></code> parameter:</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<p>./op-test –config-file hab4.conf –host-pnor ~/op-build/output/images/habanero.pnor –flash-skiboot ~/skiboot/skiboot.lid.xz</p>
+</div></blockquote>
+<p>We need to provide the <cite>skiboot.lid.xz</cite> file as all POWER8 OpenPOWER systems
+need the compressed payload in order to fit in flash. It is only <em>very</em> old
+Hostboots that do not support this and require the raw <cite>skiboot.lid</cite>.</p>
+</div>
+<div class="section" id="ibm-fsp-system-examples">
+<h3>IBM FSP System examples<a class="headerlink" href="#ibm-fsp-system-examples" title="Permalink to this headline">¶</a></h3>
+<p>For machines such as Tuleta and ZZ (firenze class).</p>
+<p>Your FSP must have an NFS mount and be configured correctly for this operation.</p>
+<p>Currently, flashing a full FSP image is only supported by doing it from
+the host. In future, we may support out of band methods.</p>
+<p>The primary use <cite>op-test</cite> on Tuleta/ZZ is for flashing new OPAL LIDs onto
+an existing FSP image. Unlike OpenPOWER machines, the kernel and initramfs
+are split up into two separate LIDs, and must be pointed to separately.</p>
+<p>This example will run the stest suite against our ZZ machine <em>after</em> flashing
+our skiboot, kernel and initramfs built fresh from <cite>op-build</cite> (with the
+configuration <cite>zz_defconfig</cite>).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./op-test --config-file zz.conf <span class="se">\</span>
+--flash-skiboot ~/op-build/output/images/skiboot.lid <span class="se">\</span>
+--flash-kernel ~/op-build/output/images/zImage.epapr <span class="se">\</span>
+--flash-initramfs ~/op-build/output/images/rootfs.cpio.xz
+</pre></div>
+</div>
+<p>For FSP based systems, the <em>uncompressed</em> <cite>skiboot.lid</cite> is needed, as the FSP
+will load this image directly into memory and start executing it.</p>
+</div>
+</div>
+<div class="section" id="op-test-and-qemu">
+<h2>op-test and Qemu<a class="headerlink" href="#op-test-and-qemu" title="Permalink to this headline">¶</a></h2>
+<p>You can use the ‘qemu’ BMC type to run many tests using the qemu simulator.
+This can be useful for test development/debug as well as testing the qemu
+simulator itself.</p>
+<p>It may be useful to keep a configuration file with your qemu configuration
+in it for running tests. An example of such a configuration file is below:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[op-test]</span>
+<span class="na">bmc_type</span><span class="o">=</span><span class="s">qemu</span>
+<span class="na">qemu_binary</span><span class="o">=</span><span class="s">~/qemu/ppc64-softmmu/qemu-system-ppc64</span>
+<span class="na">flash_skiboot</span><span class="o">=</span><span class="s">~/skiboot/skiboot.lid</span>
+<span class="na">flash_kernel</span><span class="o">=</span><span class="s">zImage.epapr</span>
+<span class="na">flash_initramfs</span><span class="o">=</span><span class="s">rootfs.cpio</span>
+<span class="na">host_user</span><span class="o">=</span><span class="s">ubuntu</span>
+<span class="na">host_password</span><span class="o">=</span><span class="s">abc123</span>
+<span class="na">ubuntu_cdrom</span><span class="o">=</span><span class="s">osimages/ubuntu-17.10-server-ppc64el.iso</span>
+</pre></div>
+</div>
+<p>Note that for <cite>qemu</cite> we want the <em>uncompressed</em> <cite>skiboot.lid</cite> for <cite>qemu</cite> to
+load, and while it’s not <em>required</em>, using the uncompressed <cite>rootfs.cpio</cite>
+does <em>significantly</em> improve boot time to Petitboot.</p>
+<p>In this configuration file example, we point to a <cite>qemu</cite> development tree
+rather than using the system default <cite>qemu-system-ppc64</cite> binary.</p>
+<p>To run the “boot to petitboot” test in qemu with the above configuration file,
+you can do so like this:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./op-test --config-file qemu.conf <span class="se">\</span>
+--run testcases.BasicIPL.BootToPetitbootShell
+</pre></div>
+</div>
+<p>Not all tests currently pass in <cite>qemu</cite>, and running tests in <cite>qemu</cite> should be
+considered somewhat experimental.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">op-test-framework</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=open-power&repo=op-test-framework&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/open-power/op-test-framework">
+    <img
+        alt="https://secure.travis-ci.org/open-power/op-test-framework.svg?branch=master"
+        src="https://secure.travis-ci.org/open-power/op-test-framework.svg?branch=master"
+    />
+</a>
+</p>
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">op-test User Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#command-line-options">Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-files-and-command-line-options">Configuration Files and Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flashing-firmware-with-op-test">Flashing Firmware with op-test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#op-test-and-qemu">op-test and Qemu</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Programming Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="programming.html">Programming Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="programming.html#generic-classes-modules">Generic Classes/Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="programming.html#bmc-machine-specific">BMC/Machine Specific</a></li>
+<li class="toctree-l1"><a class="reference internal" href="programming.html#module-testcases.OpTestFlash">Firmware Flashing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to op-test-framework’s documentation!</a></li>
+      <li>Next: <a href="programming.html" title="next chapter">Programming Guide</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, OpenPOWER Foundation.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+      |
+      <a href="_sources/user-guide.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/open-power/op-test-framework" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>
